@@ -1,11 +1,15 @@
 package loki
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	json "github.com/json-iterator/go"
+	"github.com/prometheus/common/model"
+	"golang.org/x/exp/slices"
 
 	"github.com/grafana/loki-client-go/pkg/logproto"
 )
@@ -40,7 +44,7 @@ func (b *batch) add(entry entry) {
 	b.bytes += len(entry.Line)
 
 	// Append the entry to an already existing stream (if any)
-	labels := entry.labels.String()
+	labels := labelsMapToString(entry.labels)
 	if stream, ok := b.streams[labels]; ok {
 		stream.Entries = append(stream.Entries, entry.Entry)
 		return
@@ -104,4 +108,32 @@ func (b *batch) createPushRequest() (*logproto.PushRequest, int) {
 		entriesCount += len(stream.Entries)
 	}
 	return &req, entriesCount
+}
+
+func labelsMapToString(ls model.LabelSet) string {
+	var b strings.Builder
+	totalSize := 2
+	lstrs := make([]model.LabelName, 0, len(ls))
+
+	for l, v := range ls {
+		lstrs = append(lstrs, l)
+		totalSize += len(l) + 2 + len(v) + 3
+	}
+
+	b.Grow(totalSize)
+	b.WriteByte('{')
+	slices.Sort(lstrs)
+	for i, l := range lstrs {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		b.WriteString(string(l))
+		b.WriteString(`="`)
+		b.WriteString(strconv.Quote(string(ls[l])))
+		b.WriteString(`"`)
+	}
+	b.WriteByte('}')
+
+	return b.String()
 }

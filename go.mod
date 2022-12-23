@@ -15,6 +15,7 @@ require (
 	github.com/prometheus/common v0.15.0
 	github.com/prometheus/prometheus v1.8.2-0.20201028100903-3245b3267b24
 	github.com/stretchr/testify v1.6.1
+	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
 	google.golang.org/grpc v1.32.0
 	gopkg.in/yaml.v2 v2.4.0
 )
